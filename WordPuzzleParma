@@ -1,0 +1,88 @@
+package pkg5;
+import java.io.*;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.Scanner;
+
+public class WordPuzzle {
+	public void loadDictionary(String file_path, MyHashTable<String> customHash,int hashingType) {
+		  
+		 Scanner file_stream=null;
+			try {
+				file_stream = new Scanner(new File(file_path));
+			} catch (FileNotFoundException e) {
+				
+				e.printStackTrace();
+			}
+		     int count = 0;
+		     
+		     while(file_stream.hasNext()){
+		    	 String word = file_stream.nextLine();
+		    	 if(hashingType ==1){ // enhanced prefix based hashing
+			    		StringBuilder sb = new StringBuilder();
+						for(int i = 0; i < word.length(); i++) {
+							sb.append(word.charAt(i));
+							if(i == word.length() - 1) {
+								customHash.insert(sb.toString(), true);
+								count++;
+							}
+							else {								
+								customHash.insert(sb.toString(), false);
+							}							
+						}
+		    	  }
+		    	 else
+		    	 {
+		    		 customHash.insert(word,true);
+		    		 count++;
+		    	 }
+		    	 
+		     }
+		     file_stream.close();
+	  if (hashingType==2)
+		  System.out.println("Hashing Completed With prefix"); 
+	  else
+		  System.out.println("Hashing Completed Without prefix"); 
+      System.out.println("Dictionary contains "+count+" no of words.");   
+	}
+	public static void main(String[] args){
+		Scanner sc = new Scanner(System.in);
+		MyHashTable<String> ht = new MyHashTable<>( );
+		WordPuzzle wp = new WordPuzzle();
+		
+		System.out.println("Please enter number of rows and columns: ");
+		int row = sc.nextInt();
+		int col = sc.nextInt();
+		
+		System.out.println("Enter 1 for  without prefix, 2 for enhanced algorithm: ");
+		int hashingType = sc.nextInt();
+		sc.close();
+		
+		char grid[][] = new char[row][col];
+		
+		Random random_gen = new Random();
+		for(int i = 0; i < row; i++) {
+			for(int j = 0; j < col; j++) {
+				grid[i][j] = (char) (97 + random_gen.nextInt(26));
+			}
+		}
+		
+	   // display puzzle
+	   System.out.println("------------------------------------------------------");
+	   System.out.println("The word puzzle is: ");
+	   for (int i=0; i<grid.length; i++)
+	   {
+	      for (int j=0; j<grid[i].length; j++)
+	         System.out.print(grid[i][j] + " ");
+	      System.out.println();
+       }
+	   
+	   //insert dictionary into hashtable
+	   String dictPath = "src/pkg5/dictionary.txt";
+	   System.out.println("------------------------------------------------------");
+	   wp.loadDictionary(dictPath, ht,hashingType);
+	   
+		
+	}
+}
