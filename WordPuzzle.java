@@ -12,24 +12,27 @@ import java.util.Set;
 
 public class WordPuzzle {
 	private Set<String> set;
-	private Set<String> prefix;
+	private MyHashTable<String> customHash;
 	private int max;
-	public WordPuzzle() {
+	private boolean isPrefixHash;
+	public WordPuzzle(boolean hashingType) {
 		this.set = new HashSet<>();
 		this.max = Integer.MIN_VALUE;
-		this.prefix = new HashSet<>();
+		this.customHash = new MyHashTable<>();
+		this.isPrefixHash = hashingType;
 		File dic = new File("C:/Users/Prashant  Yadav/Downloads/dictionary.txt");
 		FileReader reader=null;
 		BufferedReader br=null;
 		try{
 			reader = new FileReader(dic);
 			br = new BufferedReader(reader);
-			br.lines().forEach(s->{
-				set.add(s);
-				max=max>s.length()?max:s.length();
-				for(int i=0;i<s.length()-1;i++){
-					prefix.add(s.substring(0,i+1));
+			br.lines().forEach(word->{
+				set.add(word);
+				max=max>word.length()?max:word.length();
+				if(isPrefixHash){
+					getAllPrefix(word);
 				}
+				customHash.insert(word, true);
 				});
 			System.out.println(set.size());
 		} catch (FileNotFoundException e) {
@@ -47,28 +50,50 @@ public class WordPuzzle {
 			}
 		}
 	}
+	private void getAllPrefix(String word) {
+		for(int i=0;i<word.length()-1;i++){
+			customHash.insert(word.substring(0,i+1), false);
+		}
+	}
 	public void printGrid(char[][] grid){
-		int n = grid.length;
-		for(int i=0;i<n;i++){
-			for(int j=0;j<n;j++){
+		for(int i=0;i<grid.length;i++){
+			for(int j=0;j<grid[0].length;j++){
 				System.out.print(grid[i][j]+" ");
 			}
 			System.out.println();
 		}
 	}
-	
+	public void printDP(String[][][] dp){
+		int r = dp.length;
+		int c = dp[0].length;
+		int d = 8;
+		for(int i=0;i<r;i++){
+			for(int j=0;j<c;j++){
+				for(int k=0;k<d;k++){
+					System.out.print(dp[i][j][k]+",");
+				}
+				System.out.print("\t");
+			}
+			System.out.println();
+		}
+	}
 	public static void main(String[] args){
-		WordPuzzle wp = new WordPuzzle();
 		Scanner sc = new Scanner(System.in);
-		int n = sc.nextInt();
+		System.out.println("Enter number of rows in grid ");
+		int r = sc.nextInt();
+		System.out.println("Enter number of columns in grid ");
+		int c = sc.nextInt();
+		System.out.println("Is Prefix Hashing <true/false> ");
+		boolean isPrefixHash = sc.nextBoolean();
 		sc.close();
-		char grid[][] = new char[n][n];
-		for(int i=0;i<n;i++){
-			for(int j=0;j<n;j++){
+		char grid[][] = new char[r][c];
+		for(int i=0;i<r;i++){
+			for(int j=0;j<c;j++){
 				Random random = new Random();
 				grid[i][j] = (char) (random.nextInt(122 - 97 + 1) + 97);
 			}
 		}
+		WordPuzzle wp = new WordPuzzle(isPrefixHash);
 		/*char grid[][]={
 				{'a','a','h'},
 				{'a','b','s'},
@@ -76,38 +101,45 @@ public class WordPuzzle {
 		};*/
 		wp.printGrid(grid);
 		int count=0;
+		long start = System.currentTimeMillis();
 		for(int i=0;i<grid.length;i++){
 			for(int j=0;j<grid[0].length;j++){
-				count+=wp.searchWord(grid, i,j);
+				count+=wp.searchWord(grid, i, j, isPrefixHash);
 			}
 		}
-		System.out.println(count);
+		long end = System.currentTimeMillis();
+		String hashType = isPrefixHash?" with Prefix hashing is ":" without Prefix hashing is ";
+		System.out.println("Time taken"+hashType +(end-start)+" milliseconds");
+		System.out.println("Number of word found "+count);
 	}
 	
-	public int searchWord(char[][] grid,  int row, int col){
+	public int searchWord(char[][] grid,  int row, int col,  boolean isPrefixHash){
 		int[][] dirs = {{1,0},{-1,0},{0,1},{0,-1},{1,1},{-1,-1},{1,-1},{-1,1}};
 		int count=0;
-		String s = "";
-		s+=grid[row][col];
-		if(set.contains(s)){count++;
-		//System.out.println(s);
-		}
-		for(int[] dir:dirs){
+		boolean isCellVal = true;
+		for(int k=0;k<dirs.length; k++){
+			int[] dir = dirs[k];
 			int i=row, j=col;
-			s="";
-			s+=grid[row][col];
-			while((i+dir[0])<grid.length && (i+dir[0])>=0 && (j+dir[1])<grid[0].length-1 && (j+dir[1])>=0){
+			String s = "";
+			while((i)<grid.length && (i)>=0 && (j)<grid[0].length && (j)>=0){
+				s+=(grid[i][j]);
+				int entryType = customHash.contains(s);
+				if(isPrefixHash && entryType==0){
+					break;
+				}
+				if(entryType==1){
+					if(i==row&&j==col&&isCellVal){
+						count++;
+						isCellVal=false;
+					}
+					else if(i!=row||j!=col){
+						count++;
+					}
+				}
 				i+=dir[0];
 				j+=dir[1];
-				s+=(grid[i][j]);
-				if(s.length()>max){break;}
-				//System.out.println(s);
-				if(set.contains(s)){count++;
-				//System.out.println(s);
-				}
 			}
 		}
-		//System.out.println(row+" "+col+" "+count);
 		return count;
 	}
 }
